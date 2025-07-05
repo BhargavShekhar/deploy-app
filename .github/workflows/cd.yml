@@ -1,18 +1,28 @@
 name: Deploy to EC2
-
-on:
+on: 
     push:
         branches: [ main ]
+
 jobs:
     redeploy:
-        name: Deploying everthing to EC2
+        name: Deploying everuthing to EC2
         runs-on: ubuntu-latest
 
         steps:
-            - name: Checkout Repo (required for actions)
-            - uses: action/checkout@v3
-
-            - name: Setup SSH Key
+          - name: Checkout Repo (required for actions)
+            uses: actions/checkout@v3
+          - name: Setup SSH Key
             run: |
-                echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
-                chmod 600 ssh_key
+              echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
+              chmod 600 ssh_key
+          - name: Deploy via SSH
+            run: |
+              ssh -o StrictHostKeyChecking=no -i ssh_key ubuntu@13.204.68.219 << 'EOF'
+                cd deploy-app/
+                git pull origin main
+                pnpm install
+                pnpm run build
+                pm2 restart http-server || pm2 start http-server
+                pm2 restart web-server || pm2 start web-server
+                pm2 restart ws-server || pm2 start ws-server
+                EOF
