@@ -5,7 +5,7 @@ on:
 
 jobs:
     redeploy:
-        name: Deploying everuthing to EC2
+        name: Deploying everything to EC2
         runs-on: ubuntu-latest
 
         steps:
@@ -18,11 +18,13 @@ jobs:
           - name: Deploy via SSH
             run: |
               ssh -o StrictHostKeyChecking=no -i ssh_key ubuntu@13.204.68.219 << 'EOF'
-                cd deploy-app/
-                git pull origin main
-                pnpm install
-                pnpm run build
-                pm2 restart http-server || pm2 start http-server
-                pm2 restart web-server || pm2 start web-server
-                pm2 restart ws-server || pm2 start ws-server
-                EOF
+              cd deploy-app/
+              git stash || true
+              git pull origin main
+              export PATH="$HOME/.npm-global/bin:$PATH"
+              pnpm install
+              pnpm run build
+              pm2 restart http-server || pm2 start http-server
+              pm2 restart web-server || pm2 start web-server
+              pm2 restart ws-server || pm2 start ws-server
+              EOF
