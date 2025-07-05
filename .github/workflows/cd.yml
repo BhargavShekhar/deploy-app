@@ -7,11 +7,11 @@ on:
 
 jobs:
     redeploy:
+        runs-on: ubuntu-latest
         name: Deploying everthing to EC2
-        runson: ubuntu-latest
         steps:
-            - name: SSH into server
-            - run: |
+            name: SSH into server
+            run: |
                 echo ${{ secrets.SSH_PRIVATE_KEY }} &> ~/ssh_key
                 ssh -i ~/ssh_key ubuntu@13.204.68.219
                 cd deploy-app/ && git pull
