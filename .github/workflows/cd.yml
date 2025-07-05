@@ -1,35 +1,38 @@
 name: Deploy to EC2
-on: 
-    push:
-        branches: [ main ]
+
+on:
+  push:
+    branches: [main]
 
 jobs:
-    redeploy:
-        name: Deploying everything to EC2
-        runs-on: ubuntu-latest
+  deploy:
+    name: Deploying to EC2
+    runs-on: ubuntu-latest
 
-        steps:
-          - name: Checkout Repo (required for actions)
-            uses: actions/checkout@v3
-          - name: Setup SSH Key
-            run: |
-              echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
-              chmod 600 ssh_key
-          - name: Deploy via SSH
-            run: |
-                ssh -o StrictHostKeyChecking=no -i ssh_key ubuntu@13.204.68.219 << 'EOF'
-                # Load bashrc manually to get access to pnpm/pm2
-                source ~/.bashrc || true
-                export PATH="$HOME/.npm-global/bin:$HOME/.local/share/pnpm:$PATH"
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-                cd deploy-app/
-                git stash || true
-                git pull origin main
+      - name: Setup SSH Key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
+          chmod 600 ssh_key
 
-                pnpm install
-                pnpm run build
+      - name: Deploy via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ssh_key ubuntu@13.204.68.219 << 'EOF'
+          cd deploy-app/
+          git stash || true
+          git pull origin main
 
-                pm2 restart http-server || pm2 start http-server
-                pm2 restart web-server || pm2 start web-server
-                pm2 restart ws-server || pm2 start ws-server
-                EOF
+          # Use correct paths for pnpm and pm2 — update these if different on your EC2
+          PNPM="/home/ubuntu/.local/share/pnpm/pnpm"
+          PM2="/home/ubuntu/.npm-global/bin/pm2"
+
+          $PNPM install
+          $PNPM run build
+
+          $PM2 restart http-server || $PM2 start http-server
+          $PM2 restart web-server || $PM2 start web-server
+          $PM2 restart ws-server || $PM2 start ws-server
+          EOF
