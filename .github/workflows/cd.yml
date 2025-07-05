@@ -17,14 +17,19 @@ jobs:
               chmod 600 ssh_key
           - name: Deploy via SSH
             run: |
-              ssh -o StrictHostKeyChecking=no -i ssh_key ubuntu@13.204.68.219 << 'EOF'
-              cd deploy-app/
-              git stash || true
-              git pull origin main
-              export PATH="$HOME/.npm-global/bin:$PATH"
-              pnpm install
-              pnpm run build
-              pm2 restart http-server || pm2 start http-server
-              pm2 restart web-server || pm2 start web-server
-              pm2 restart ws-server || pm2 start ws-server
-              EOF
+                ssh -o StrictHostKeyChecking=no -i ssh_key ubuntu@13.204.68.219 << 'EOF'
+                # Load bashrc manually to get access to pnpm/pm2
+                source ~/.bashrc || true
+                export PATH="$HOME/.npm-global/bin:$HOME/.local/share/pnpm:$PATH"
+
+                cd deploy-app/
+                git stash || true
+                git pull origin main
+
+                pnpm install
+                pnpm run build
+
+                pm2 restart http-server || pm2 start http-server
+                pm2 restart web-server || pm2 start web-server
+                pm2 restart ws-server || pm2 start ws-server
+                EOF
